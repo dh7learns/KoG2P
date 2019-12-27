@@ -32,7 +32,7 @@ import re
 import math
 import sys
 import optparse
-
+import importlib
 
 # Option
 parser = optparse.OptionParser()
@@ -46,8 +46,8 @@ verbose = options.verbose
 ver_info = sys.version_info
 
 if ver_info[0] == 2:
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
+    importlib.reload(sys)
+    sys.getdefaultencoding('utf-8')
 
 
 def readfileUTF8(fname):
@@ -67,15 +67,17 @@ def readfileUTF8(fname):
 
 
 def writefile(body, fname):
-    out = open(fname, 'w')
-    for line in body:
-        out.write('{}\n'.format(line))
-    out.close()
+    with open(fname, 'w', encoding="utf-8") as out:
+    # for line in body:
+        print(type(body))
+        print(body)
+        out.writelines(body)
+    #out.close()
 
 
 def readRules(pver, rule_book):
     if pver == 2:
-        f = open(rule_book, 'r')
+        f = open(rule_book, 'r', encoding="utf-8")
     elif pver == 3:
          f = open(rule_book, 'r',encoding="utf-8")
          
@@ -85,7 +87,7 @@ def readRules(pver, rule_book):
     while True:
         line = f.readline()
         if pver == 2:
-            line = unicode(line.encode("utf-8"))
+            line = str(line.encode("utf-8"))
             line = re.sub(u'\n', u'', line)
         elif pver == 3:
             line = re.sub('\n', '', line)
@@ -128,7 +130,7 @@ def checkCharType(var_list):
 def graph2phone(graphs):
     # Encode graphemes as utf8
     try:
-        graphs = graphs.decode('utf8')
+        graphs = graphs.decode('utf-8')
     except AttributeError:
         pass
 
@@ -295,7 +297,7 @@ def testG2P(rulebook, testset):
             print('G2P ERROR:  [result] ' + pred + '\t\t\t[ans] ' + item_in + ' [' + item_out + '] ' + ans)
             cnt += 1
         else:
-            body.append('[result] ' + pred + '\t\t\t[ans] ' + item_in + ' [' + item_out + '] ' + ans)
+            body.append('[result] ' + pred + '\t\t\t[ans] ' + item_in + ' [' + item_out + '] ' + ans + '\n')
 
     print('Total error item #: ' + str(cnt))
     writefile(body,'good.txt')
@@ -304,9 +306,9 @@ def testG2P(rulebook, testset):
 def runKoG2P(graph, rulebook):
     [rule_in, rule_out] = readRules(ver_info[0], rulebook)
     if ver_info[0] == 2:
-        prono = graph2prono(unicode(graph), rule_in, rule_out)
+        prono = graph2prono(str(graph), rule_in, rule_out)
     elif ver_info[0] == 3:
-        prono = graph2prono(graph, rule_in, rule_out)
+        prono = graph2prono(str(graph), rule_in, rule_out)
 
     print(prono)
 
@@ -325,12 +327,16 @@ def runTest(rulebook, testset):
 
 # Usage:
 if __name__ == '__main__':
+    while True:
+        my_word = input('enter korean word or test in english:')
 
-    if args[0] == 'test':   # G2P Performance Test
-        runTest('rulebook.txt', 'testset.txt')
+        if my_word == 'test':   # G2P Performance Test
+            runTest('rulebook.txt', 'testset.txt')
 
-    else:
-        graph = args[0]
-        runKoG2P(graph, 'rulebook.txt')
+        elif my_word == 'end':
+            break
+        else:
+            graph = my_word
+            runKoG2P(graph, 'rulebook.txt')
 
 
