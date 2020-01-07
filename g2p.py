@@ -42,14 +42,6 @@ parser.add_option("-v", action="store_true", dest="verbose", default="False",
 (options,args) = parser.parse_args()
 verbose = options.verbose
 
-# Check Python version
-ver_info = sys.version_info
-
-if ver_info[0] == 2:
-    importlib.reload(sys)
-    sys.getdefaultencoding('utf-8')
-
-
 def readfileUTF8(fname):
     f = open(fname, 'r')
     corpus = []
@@ -60,7 +52,8 @@ def readfileUTF8(fname):
         line = re.sub(u'\n', u'', line)
         if line != u'':
             corpus.append(line)
-        if not line: break
+        if not line:
+            break
 
     f.close()
     return corpus
@@ -68,29 +61,19 @@ def readfileUTF8(fname):
 
 def writefile(body, fname):
     with open(fname, 'w', encoding="utf-8") as out:
-    # for line in body:
-        print(type(body))
-        print(body)
         out.writelines(body)
-    #out.close()
 
 
-def readRules(pver, rule_book):
-    if pver == 2:
-        f = open(rule_book, 'r', encoding="utf-8")
-    elif pver == 3:
-         f = open(rule_book, 'r',encoding="utf-8")
+
+def readRules(rule_book):
+    f = open(rule_book, 'r',encoding="utf-8")
          
     rule_in = []
     rule_out = []
 
     while True:
         line = f.readline()
-        if pver == 2:
-            line = str(line.encode("utf-8"))
-            line = re.sub(u'\n', u'', line)
-        elif pver == 3:
-            line = re.sub('\n', '', line)
+        line = re.sub('\n', '', line)
 
         if line != u'':
             if line[0] != u'#':
@@ -107,8 +90,8 @@ def readRules(pver, rule_book):
 
 
 def isHangul(charint):
-    hangul_init = 44032
-    hangul_fin = 55203
+    hangul_init = 44032 # 가
+    hangul_fin = 55203 # 힣
     return charint >= hangul_init and charint <= hangul_fin
 
 
@@ -128,22 +111,25 @@ def checkCharType(var_list):
 
 
 def graph2phone(graphs):
-    # Encode graphemes as utf8
+    # Encode graphemes as utf-8
     try:
         graphs = graphs.decode('utf-8')
     except AttributeError:
         pass
 
-    integers = []
+    integers = [] # integers = list of ord(char) ## by each char
     for i in range(len(graphs)):
         integers.append(ord(graphs[i]))
 
     # Romanization (according to Korean Spontaneous Speech corpus; 성인자유발화코퍼스)
     phones = ''
+    # 초
     ONS = ['k0', 'kk', 'nn', 't0', 'tt', 'rr', 'mm', 'p0', 'pp',
            's0', 'ss', 'oh', 'c0', 'cc', 'ch', 'kh', 'th', 'ph', 'h0']
+    # 중
     NUC = ['aa', 'qq', 'ya', 'yq', 'vv', 'ee', 'yv', 'ye', 'oo', 'wa',
            'wq', 'wo', 'yo', 'uu', 'wv', 'we', 'wi', 'yu', 'xx', 'xi', 'ii']
+    # 종
     COD = ['', 'kf', 'kk', 'ks', 'nf', 'nc', 'nh', 'tf',
            'll', 'lk', 'lm', 'lb', 'ls', 'lt', 'lp', 'lh',
            'mf', 'pf', 'ps', 's0', 'ss', 'oh', 'c0', 'ch',
@@ -151,14 +137,41 @@ def graph2phone(graphs):
 
     # Pronunciation
     idx = checkCharType(integers)
+    # integers = list of ord(char) ## by each char
+    # checked list of 1s,0s,-1s
+
+    #  1: whitespace
+    #  0: hangul
+    # -1: non-hangul
+
+    # ex: kor space kor space kor= [0,1,0,1,0]
+        # idx = checked( list of ord(char) )
+
     iElement = 0
-    while iElement < len(integers):
-        if idx[iElement] == 0:  # not space characters
-            base = 44032
+    while iElement < len(integers): # while iElement < len(list of ord(char))
+        if idx[iElement] == 0:
+            # ex: idx = [0,1,0,1,0]
+            #       if idx[iElement] <-> if first char is kor_char
+            base = 44032 # base = 44032 = ord('가')
             df = int(integers[iElement]) - base
+            # df = int(first kor_char) - base // df <- diff? relative diff/loc
+            # 가 - 가 = 0
+
             iONS = int(math.floor(df / 588)) + 1
+            # largest whole int(location/588) + 1 <- floor + 1,
+            # 5/4 --> 1.25 -> 1 --> (+1) --> 2
+            # 가 -> ONS ----> ㄱ -> int(floor(0/588) + 1 = 1 <- ㄱ [ㄱ-ㅎ]
             iNUC = int(math.floor((df % 588) / 28)) + 1
+            # 588 = 21*28 , 588*19 = 11172
+            # when df > 588
+            # largest whole int(remainder of (location/588) / 28) + 1
+            #
+            # 각 -> ㅏ -> int(floor(1 % 588) /28종) + 1 ->
+            #               int(floor(1/28)) + 1 ->
+            #                   0 + 1 = 1 <- ㅏ in [ㅏ-ㅣ]
             iCOD = int((df % 588) % 28) + 1
+            #
+
 
             s1 = '-' + ONS[iONS - 1]  # onset
             s2 = NUC[iNUC - 1]  # nucleus
@@ -279,7 +292,7 @@ def graph2prono(graphs, rule_in, rule_out):
 
 
 def testG2P(rulebook, testset):
-    [testin, testout] = readRules(ver_info[0], testset)
+    [testin, testout] = readRules(testset)
     cnt = 0
     body = []
     for idx in range(0, len(testin)):
@@ -290,7 +303,7 @@ def testG2P(rulebook, testset):
         ans = re.sub(u'-', u'', ans)
         ans = addSpace(ans)
 
-        [rule_in, rule_out] = readRules(ver_info[0], rulebook)
+        [rule_in, rule_out] = readRules(rulebook)
         pred = graph2prono(item_in, rule_in, rule_out)
 
         if pred != ans:
@@ -303,14 +316,39 @@ def testG2P(rulebook, testset):
     writefile(body,'good.txt')
 
 
-def runKoG2P(graph, rulebook):
-    [rule_in, rule_out] = readRules(ver_info[0], rulebook)
-    if ver_info[0] == 2:
-        prono = graph2prono(str(graph), rule_in, rule_out)
-    elif ver_info[0] == 3:
-        prono = graph2prono(str(graph), rule_in, rule_out)
+e2k_dict = {'p0':'ㅂ','ph':'ㅍ','pp':'ㅃ','t0':'ㄷ','th':'ㅌ',
+            'tt':'ㄸ','k0':'ㄱ','kh':'ㅋ','kk':'ㄲ','s0':'ㅅ',
+            'ss':'ㅆ','h0':'ㅎ','c0':'ㅈ','ch':'ㅊ','cc':'ㅉ',
+            'mm':'ㅁ','nn':'ㄴ','rr':'ㄹ','pf':'ㅂ','tf':'ㄷ',
+            'kf':'ㄱ','mf':'ㅁ','nf':'ㄴ','ng':'ㅇ','ll':'ㄹ',
+            'ks':'ㄳ','nc':'ㄵ','nh':'ㄶ','lk':'ㄺ','lm':'ㄻ',
+            'lb':'ㄼ','ls':'ㄽ','lt':'ㄾ','lp':'ㄿ','lh':'ㅀ',
+            'ps':'ㅄ','ii':'ㅣ','ee':'ㅔ','qq':'ㅐ','aa':'ㅏ',
+            'xx':'ㅡ','vv':'ㅓ','uu':'ㅜ','oo':'ㅗ','ye':'ㅖ',
+            'yq':'ㅒ','ya':'ㅑ','yv':'ㅕ','yu':'ㅠ','yo':'ㅛ',
+            'wi':'ㅟ','wo':'ㅚ','wq':'ㅙ','we':'ㅞ','wa':'ㅘ',
+            'wv':'ㅝ','xi':'ㅢ'}
 
+
+from jamo import j2h as wrap
+
+def prono2kor(prono):
+    prono_list = prono.split(' ')
+    p4wrap = []
+    for p in prono_list:
+        p4wrap.append(e2k_dict[p])
+    p4wrap = ''.join(p4wrap)
+    # wrapped = wrap(p4wrap)
+    print(p4wrap)
+
+def runKoG2P(graph, rulebook):
+    [rule_in, rule_out] = readRules(rulebook)
+    prono = graph2prono(str(graph), rule_in, rule_out)
+    print(f'the type of prono is: {type(prono)}')
     print(prono)
+    prono2kor(prono)
+
+
 
 
 def runTest(rulebook, testset):

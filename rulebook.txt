@@ -7,13 +7,14 @@
 ###		- 유음화 - 구개음화 - 유기음화(홑받침) - 연음 - 종성중화 - 리을 재음절화 [종료]
 ### ----------------------------------------------------------------------------------------
 ### 예외처리
+(p0|ph|pp|t0|th|tt|k0|kh|kk|s0|ss|h0|c0|ch|cc|mm|nn),xi,	\1,ii,	# 의 이
 (?<=(ii|yu|ee),-)k0,(?=wv,nf,)	kk,	# 기권, 유권, 세권(세꿘), 무기권, 소유권 역세권
 ii,ll,[#-]y([aeoquv]),	ii,ll,rr,y\1,	# 일 연대, 삼십일여간
 (h0,aa|t0,xx),ll,-ii,ll,	\1,ll,rr,ii,ll,	# 들일, 볼일, 할일
 s0,vv,ll,-ii,kf,	s0,vv,ll,rr,ii,kf,	# 설익(다)
 mm,uu,ll,-k0,oo,-k0,ii,	mm,uu,ll,kk,oo,k0,ii,	# 물고기
 s0,ii,ll,-s0,ii,ll	s0,ii,ll,s0,ii,ll	# 실실
-k0,ii,-s0,xx,lk,	k0,ii,s0,xx,kf,	# 기슭
+k0,ii,-s0,xx,lk,    k0,ii,s0,xx,kf,	# 기슭
 c0,vv,ll,-ya,kf,	c0,vv,rr,ya,kf,	# 절약
 k0,xx,mf,-yo,-ii,ll,	k0,xx,-mm,yo,-ii,ll,	# 금요일
 lt,-ii,	ll,-ch,ii,	# 훑이
